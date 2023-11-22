@@ -1,4 +1,4 @@
-CXXFLAGS += -g -O0 -std=c++11
+CXXFLAGS += -g -O0 -std=c++11 -I./include
 
 fm: fm.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
