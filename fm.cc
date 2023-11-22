@@ -202,7 +202,8 @@ main(int argc, char *argv[])
         mask = FAN_MODIFY|FAN_CLOSE;
     try {
         std::clog << "checking for events " << FanMask(mask) << "\n";
-        int fd = fanotify_init(FAN_CLASS_NOTIF|FAN_REPORT_FID|FAN_REPORT_DIR_FID, O_RDONLY);
+        // int fd = fanotify_init(FAN_CLASS_NOTIF|FAN_REPORT_FID|FAN_REPORT_DIR_FID, O_RDONLY);
+        int fd = fanotify_init(FAN_CLOEXEC, O_RDONLY | O_CLOEXEC | O_LARGEFILE);
         if (fd == -1)
             throw Errno("fanotify_init");
 
@@ -220,16 +221,18 @@ main(int argc, char *argv[])
                 case -1:
                     throw Errno("read");
                 default: {
+		    time_t current_time = time(NULL);
+		    char *c_time_string = ctime(&current_time);
                     const char *e = buf + received;
                     const struct fanotify_event_metadata *data;
                     for (const char *p = buf; p < e; ) {
                         data = (const struct fanotify_event_metadata *)p;
                         FDCloser fd(data->fd);
                         std::cout
-                            << "mask: " << FanMask(data->mask)
-                            << ", fd: " << data->fd
-                            << ", pid: " << data->pid
+                            << "time: " << strtok(c_time_string, "\n")
                             << ", file: " << self.filePath(data->fd)
+                            << ", mask: " << FanMask(data->mask)
+                            << ", pid: " << data->pid
                             << ", command: " << Proc(data->pid).commandLine()
                             << "\n";
                         const char *emsg = p + data->event_len;
